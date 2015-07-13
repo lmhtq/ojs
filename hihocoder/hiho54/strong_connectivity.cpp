@@ -7,14 +7,14 @@
 
 using namespace std;
 
-#define N 20001
-#define M 100001
+#define N 20005
+#define M 100005
 
 int n, m;
 
 struct Node
 {
-	int grass;
+	long grass;
 	int low, dfn;
 	int in_dgree;
 	set<int> next;
@@ -48,7 +48,7 @@ void init()
 	}
 	while (!Q.empty()) Q.pop();
 	for (int i = 1 ; i <= n; i++) {
-		scanf("%d", &nodes[i].grass);
+		scanf("%ld", &nodes[i].grass);
 	}
 	for (int i = 0; i < m; i++) {
 		int a, b;
@@ -56,37 +56,12 @@ void init()
 		nodes[a].next.insert(b);
 		//nodes[b].in_dgree++;
 	}
-	// Q.push(1);
-	// while(!Q.empty()) {
-	// 	int u = Q.front();
-	// 	visited[u] = true;
-	// 	Q.pop();
-	// 	set<int>::iterator it;
-	// 	for (it = nodes[u].next.begin(); it != nodes[u].next.end(); it++) {
-	// 		int v = *it;
-	// 		visited[v] = true;
-	// 		if (nodes[v].in_dgree <= 0) {
-	// 			continue;
-	// 		}
-	// 		nodes2[v].in_dgree--;
-	// 		nodes2[v].grass += nodes2[u].grass;
-	// 		if (nodes2[v].in_dgree == 0) {
-	// 			Q.push(v);
-	// 		}
-	// 	}
-	// }
-	// for (int i = 1; i <= n; i++) {
-	// 	if (!visited[i]) {
-	// 		nodes[i].grass = 0;
-	// 	}
-	// }
-	// memset(visited, 0, sizeof(visited));
 }
 
-bool in_stack(int e, int arr[])
+bool in_stack(int e)
 {
 	for (int i = 0; i < top; i++) {
-		if (e == arr[i]) {
+		if (e == mystack[i]) {
 			return true;
 		}
 	}
@@ -108,7 +83,7 @@ void tarjan(int u)
 			tarjan(v);
 			nodes[u].low = min(nodes[u].low, nodes[v].low);
 		} else {
-			if (in_stack(u, mystack)) {
+			if (in_stack(v)) {
 				nodes[u].low = min(nodes[u].low, nodes[v].dfn);
 			}
 		}
@@ -117,21 +92,21 @@ void tarjan(int u)
 	if (nodes[u].low == nodes[u].dfn) {
 		tmp.clear();
 		while (top > 0) {
-			//printf("%d ", mystack[--top]);
 			tmp.push_back(mystack[--top]);
+			//printf("%d ", mystack[top]);
 			if (mystack[top] == u) {
 				break;
 			}
 		}
-		//printf("\n\n");
-		int min = N + 2;
+		//printf("\n");
+		int min0 = N + 2;
 		for (int i = 0; i < tmp.size(); i++) {
-			if (tmp[i] < min) {
-				min = tmp[i];
+			if (tmp[i] < min0) {
+				min0 = tmp[i];
 			}
 		}
 		for (int i = 0; i < tmp.size(); i++) {
-			trans[tmp[i]] = min;
+			trans[tmp[i]] = min0;
 		}
 	}
 }
@@ -140,6 +115,7 @@ void construct()
 {
 	for (int u = 1; u <= n; u++) {
 		int new_node = trans[u];
+		//printf("%d->%d\n", u, new_node);
 		if (new_node <= 0) {
 			continue;
 		}
@@ -148,11 +124,11 @@ void construct()
 		for (it = nodes[u].next.begin(); it != nodes[u].next.end(); it++) {
 			int v = *it;
 			int e = trans[v];
+			if (e == new_node) {//key
+				continue;
+			}
 			nodes2[new_node].next.insert(e);
 			nodes2[e].in_dgree++;
-			if (e == u || e == new_node) {//key
-				nodes2[e].in_dgree--;
-			}
 			
 		}
 	}
@@ -191,16 +167,16 @@ void topology_sort()
 
 void output()
 {
-	int max = -1;
+	long max0 = -1;
 	set<int>::iterator it;
 	for (it = keda.begin(); it != keda.end(); it++) {
 		int i = *it;
 		//printf("%d:%d\n", i, nodes2[i].grass);
-		if (max < nodes2[i].grass) {
-			max = nodes2[i].grass;
+		if (max0 < nodes2[i].grass) {
+			max0 = nodes2[i].grass;
 		}
 	}
-	printf("%d\n", max);
+	printf("%ld\n", max0);
 }
 
 int main()
