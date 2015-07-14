@@ -76,9 +76,9 @@ bool f(int threshold) {
 		tmpk--;
 	}
 
-	// if (t == 1 && visited[t] == true) {
-	// 	return true;
-	// }
+	if (t == 1 && visited[t] == true) {
+		return true;
+	}
 	return false;
 }
 
