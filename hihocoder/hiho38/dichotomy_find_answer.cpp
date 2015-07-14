@@ -22,7 +22,7 @@ struct Node
 } nodes[N];
 
 queue<int> Q;
-bool visited[N];
+int visited[N];
 
 int res, maxw;
 
@@ -55,28 +55,24 @@ bool f(int threshold) {
 	memset(visited, 0, sizeof(visited));
 
 	Q.push(1);
-	visited[1] = true;
-	int tmpk = k;
+	visited[1] = 1;
 	while (!Q.empty()) {
 		int u = Q.front();
-		//printf("%d\n", u);
 		Q.pop();
 		for (int i = 0; i < nodes[u].next.size(); i++) {
 			int v = nodes[u].next[i].to;
 			int val = nodes[u].next[i].w;
 			if (!visited[v] && threshold >= val) {
-				visited[v] = true;
-				if (v == t && tmpk > 0) {
+				visited[v] = visited[u] + 1;
+				if (v == t && visited[v] <= k+1 && visited[v] > 0) {
 					return true;
 				}
 				Q.push(v);
 			}
-			
 		}
-		tmpk--;
 	}
 
-	if (t == 1 && visited[t] == true) {
+	if (t == 1) {
 		return true;
 	}
 	return false;
