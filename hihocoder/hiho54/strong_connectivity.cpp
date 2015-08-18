@@ -4,6 +4,7 @@
 #include <vector>
 #include <set>
 #include <queue>
+#include <map>
 
 using namespace std;
 
@@ -11,180 +12,158 @@ using namespace std;
 #define M 100005
 
 int n, m;
+int grass[N];
+pair<int, int> E[M];
+vector<int> G[N];
+int dfn[N];
+int low[N];
 
-struct Node
-{
-	long grass;
-	int low, dfn;
-	int in_dgree;
-	set<int> next;
-} nodes[N], nodes2[N];
+int mystack[N], top;
 
+int belong[N];
+int grass2[N];
+int grass2_extra[N];
+vector<int> G2[N];
+int in_degree2[N];
 bool visited[N];
-int trans[N];
-int mystack[N+2], top = 0;
+int order, new_id;
 
-vector<int> tmp;
 queue<int> Q;
-//set<int>::iterator it;//Error, use local variable will be AC
+int res;
 
 void init()
 {
+	for (int i = 0; i < N; i++)
+		G[i].clear();
+	for (int i = 0; i < N; i++)
+		G2[i].clear();
+	top = 0;
+	memset(grass, 0, sizeof(grass));
+	memset(grass2, 0, sizeof(grass2));
+	memset(grass2_extra, 0, sizeof(grass2_extra));
+	memset(belong, 0, sizeof(belong));
+	memset(dfn, 0, sizeof(dfn));
+	memset(low, 0, sizeof(low));
+	memset(in_degree2, 0, sizeof(in_degree2));
+	memset(visited, false, sizeof(visited));
+	order = 0;
+	new_id = 0;
+	res = 0;
+	while (!Q.empty())
+		Q.pop();
+
 	scanf("%d%d", &n, &m);
-	// memset(nodes, 0, sizeof(nodes));//Error
-	// memset(nodes2, 0, sizeof(nodes2));//Error
-	for (int i = 0; i <= n; i++) {
-		nodes[i].grass = nodes[i].low = nodes[i].dfn = nodes[i].in_dgree = 0;
-		nodes[i].next.clear();
-	}
-	for (int i = 0; i <= n; i++) {
-		nodes2[i].grass = nodes2[i].low = nodes2[i].dfn = nodes2[i].in_dgree = 0;
-		nodes2[i].next.clear();
-	}
-	memset(visited, 0, sizeof(visited));
-	memset(mystack, 0, sizeof(mystack));
-	for (int i = 0; i < N; i++) {
-		trans[i] = i;
-	}
-	while (!Q.empty()) Q.pop();
-	for (int i = 1 ; i <= n; i++) {
-		scanf("%ld", &nodes[i].grass);
-	}
-	for (int i = 0; i < m; i++) {
-		int a, b;
-		scanf("%d%d", &a, &b);
-		nodes[a].next.insert(b);
-		//nodes[b].in_dgree++;
+	for (int i = 1; i <= n; i++)
+		scanf("%d", grass + i);
+	for (int i = 0; i < m; ++i) {
+		int u, v;
+		scanf("%d%d", &u, &v);
+		E[i].first = u, E[i].second = v;
+		G[u].push_back(v);
 	}
 }
 
-bool in_stack(int e)
+bool in_stack(int v)
 {
-	for (int i = 0; i < top; i++) {
-		if (e == mystack[i]) {
+	for (int i = 0 ; i < top; i++) {
+		if (mystack[i] == v)
 			return true;
-		}
 	}
 	return false;
 }
 
-int order = 0;
 void tarjan(int u)
 {
-	order++;
-	nodes[u].low = nodes[u].dfn = order;
-	visited[u] = true;
+	low[u] = dfn[u] = ++order;
 	mystack[top++] = u;
-	set<int>::iterator it;
-	for (it = nodes[u].next.begin(); it != nodes[u].next.end(); ++it) {
-		//printf("%d\n", *it);
-		int v = *it;
+	visited[u] = true;
+	for (int i = 0; i < G[u].size(); i++) {
+		int v = G[u][i];
 		if (!visited[v]) {
 			tarjan(v);
-			nodes[u].low = min(nodes[u].low, nodes[v].low);
-		} else {
-			if (in_stack(v)) {
-				nodes[u].low = min(nodes[u].low, nodes[v].dfn);
-			}
+			low[u] = min(low[u], low[v]);
+		} else if (in_stack(v)) {
+			low[u] = min(low[u], dfn[v]);
 		}
 	}
-	
-	if (nodes[u].low == nodes[u].dfn) {
-		tmp.clear();
-		while (top > 0) {
-			tmp.push_back(mystack[--top]);
-			//printf("%d ", mystack[top]);
-			if (mystack[top] == u) {
+
+	if (low[u] == dfn[u]) {
+		new_id++;
+		while (top >= 0) {
+			int j = mystack[--top];
+			belong[j] = new_id;
+			grass2[new_id] += grass[j];
+			if (j == u)
 				break;
-			}
-		}
-		//printf("\n");
-		int min0 = N + 2;
-		for (int i = 0; i < tmp.size(); i++) {
-			if (tmp[i] < min0) {
-				min0 = tmp[i];
-			}
-		}
-		for (int i = 0; i < tmp.size(); i++) {
-			trans[tmp[i]] = min0;
 		}
 	}
 }
 
-void construct()
+void reconstruct()
 {
-	for (int u = 1; u <= n; u++) {
-		int new_node = trans[u];
-		//printf("%d->%d\n", u, new_node);
-		if (new_node <= 0) {
+	for (int i = 0; i < m; i++) {
+		int u = belong[E[i].first];
+		int v = belong[E[i].second];
+		if (u == 0 || v == 0)
 			continue;
-		}
-		nodes2[new_node].grass += nodes[u].grass;
-		set<int>::iterator it;
-		for (it = nodes[u].next.begin(); it != nodes[u].next.end(); it++) {
-			int v = *it;
-			int e = trans[v];
-			if (e == new_node) {//key
-				continue;
+		if (u != v) {
+			for (int j = 0; j < G2[u].size(); j++) {
+				if (v == G2[u][j]) {
+					continue;
+				}
 			}
-			nodes2[new_node].next.insert(e);
-			nodes2[e].in_dgree++;
-			
+			G2[u].push_back(v);
+			in_degree2[v]++;
 		}
 	}
+	memset(visited, false, sizeof(visited));
 }
 
-set<int> keda;
-void topology_sort()
+void topology_sort()//WA, FUCK ERR
 {
-	// for (int i = 1; i <= n; i++) {
-	// 	//printf("%d:%d\n", i, nodes2[i].in_dgree);
-	// 	if (nodes2[i].in_dgree == 0) {
-	// 		Q.push(i);
-	// 	}
-	// }
-	Q.push(1);
-	keda.insert(1);
+	Q.push(belong[1]);
 	while (!Q.empty()) {
 		int u = Q.front();
-		keda.insert(u);
 		Q.pop();
-		set<int>::iterator it;
-		for (it = nodes2[u].next.begin(); it != nodes2[u].next.end(); it++) {
-			int v = *it;
-			keda.insert(v);
-			if (nodes2[v].in_dgree <= 0) {
-				continue;
-			}
-			nodes2[v].in_dgree--;
-			nodes2[v].grass += nodes2[u].grass;
-			if (nodes2[v].in_dgree == 0) {
+		res = max(res, grass2[u] + grass2_extra[u]);
+		for (int i = 0; i < G2[u].size(); ++i) {
+			int v = G2[u][i];
+			//grass2[v] += grass2[u]; ERR
+			grass2_extra[v] = max(grass2_extra[v], grass2_extra[u] + grass2[u]);//AC
+			in_degree2[v]--;
+			if (in_degree2[v] == 0) {
 				Q.push(v);
 			}
 		}
 	}
 }
 
+void dfs(int u, int sum)
+{
+	res = max(res, sum);
+	for (int i = 0; i < G2[u].size(); i++) {
+		int v = G2[u][i];
+		if (!visited[v]) {
+			visited[v] = true;
+			dfs(v, sum + grass2[v]);
+			visited[v] = false;
+		}
+
+	}
+}
+
 void output()
 {
-	long max0 = -1;
-	set<int>::iterator it;
-	for (it = keda.begin(); it != keda.end(); it++) {
-		int i = *it;
-		//printf("%d:%d\n", i, nodes2[i].grass);
-		if (max0 < nodes2[i].grass) {
-			max0 = nodes2[i].grass;
-		}
-	}
-	printf("%ld\n", max0);
+	printf("%d\n", res);
 }
 
 int main()
 {
 	init();
 	tarjan(1);
-	construct();
+	reconstruct();
 	topology_sort();
+	//dfs(belong[1], grass2[belong[1]]);
 	output();
 	return 0;
 }
